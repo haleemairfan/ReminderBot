@@ -1,0 +1,8 @@
+# Ignore client .env
+client/.env
+
+# Ignore server .env
+server/.env
+
+
+.venv
