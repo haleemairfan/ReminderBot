@@ -1,9 +1,8 @@
+import os
 from pymongo import MongoClient
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
-
-
 
 
 ##intialise connection to mongodb
