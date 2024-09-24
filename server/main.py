@@ -4,44 +4,51 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 
-
-##intialise connection to mongodb
+# Load environment variables from .env file
 load_dotenv()
+
+# Initialize MongoDB client
 uri = os.getenv("MONGODB_URI")
+
 client = MongoClient(uri)
 
-##initialise flask app 
+# Initialize Flask app
 app = Flask(__name__)
-CORS(app)  
+CORS(app)
 
-##access cluster and collection
-dataBase = client["reminder-bot-cluster"]
-remindersCollection = dataBase.create_collection(
-    "reminders", 
-    validator={
-        "$jsonSchema": {
-            "bsonType": "object",
-            "required": ["content", "date", "time"],
-            "properties": {
-                "content": {
-                    "bsonType": "string",
-                    "description": "Reminder content must be a string."
+# Access the cluster and create a collection with validation
+db = client["reminder-bot-cluster"]
+
+# Ensure the collection exists or create it with schema validation
+if "reminders" not in db.list_collection_names():
+    remindersCollection = db.create_collection(
+        "reminders",
+        validator={
+            "$jsonSchema": {
+                "bsonType": "object",
+                "required": ["content", "date", "time"],
+                "properties": {
+                    "content": {
+                        "bsonType": "string",
+                        "description": "Reminder content must be a string."
                     },
-                "date": {
-                    "bsonType": "string",
-                    "description": "Date must be a string in YYYY-MM-DD format."
-                },
-                "time": {
-                    "bsonType": "string",
-                    "description": "Time must be a string in HH:MM format."
+                    "date": {
+                        "bsonType": "string",
+                        "description": "Date must be a string in YYYY-MM-DD format."
+                    },
+                    "time": {
+                        "bsonType": "string",
+                        "description": "Time must be a string in HH:MM format."
+                    }
                 }
             }
         }
-    })
+    )
+else:
+    remindersCollection = db["reminders"]
 
-##Store reminders
+# Route to store reminders
 @app.route("/storeReminders", methods=["POST"])
-
 def store_reminder():
     try:
         data = request.json
@@ -50,26 +57,15 @@ def store_reminder():
         time = data.get("time")
 
         if not content or not date or not time:
-            return jsonify({
-                "error": "All fields (content, date, and time) are required"}), 400
-        
+            return jsonify({"error": "All fields (content, date, and time) are required"}), 400
 
-        reminder = {
-            "content": content,
-            "date": date,
-            "time": time
-        }
-
+        reminder = {"content": content, "date": date, "time": time}
         result = remindersCollection.insert_one(reminder)
-        
-        return jsonify({"message": "Reminder stored successfully!", "id": str(result.inserted_id)}), 201
 
+        return jsonify({"message": "Reminder stored successfully!", "id": str(result.inserted_id)}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-##View reminders
-
-
+# Running the Flask app
 if __name__ == "__main__":
     app.run(debug=True)
