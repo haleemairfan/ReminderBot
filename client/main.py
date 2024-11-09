@@ -170,16 +170,7 @@ async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Responses
 async def handleResponse(text: str) -> str:
-    processed: str = text.lower()
-
-    if 'hello' in processed:
-        return 'i fucked ur mom'
-    if 'how are you' in processed:
-        return 'ur mother'
-    if 'ur mother' in processed:
-        return 'ur auntie'
-    return 'GAY RIGHTS!'
-
+    return 'Please refer to /help if you require any help using this bot'
 
 async def handleMessage(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Group chat or private chat
