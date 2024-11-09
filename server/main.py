@@ -46,7 +46,6 @@ if "reminders" not in db.list_collection_names():
     )
 else:
     remindersCollection = db["reminders"]
-
 # Route to store reminders
 @app.route("/storeReminders", methods=["POST"])
 def store_reminder():
@@ -65,7 +64,29 @@ def store_reminder():
         return jsonify({"message": "Reminder stored successfully!", "id": str(result.inserted_id)}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+
+# Route to view reminders
+@app.route("/viewReminders", methods=["GET"])
+def view_reminder():
+    try:
+        data = request.args
+        date = data.get("date")
+        if not date:
+            return jsonify({"error": "A valid date is required"}), 400
+
+        reminders = list(remindersCollection.find({"date": date}))
+        
+        for reminder in reminders:
+            reminder["_id"] = str(reminder["_id"])
+
+        return jsonify({"message": "Here are your reminders!", "data": reminders}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # Running the Flask app
 if __name__ == "__main__":
     app.run(debug=True)
+
+
