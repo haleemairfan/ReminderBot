@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import os
-import threading
 from typing import Final
 
 from dotenv import load_dotenv  
@@ -11,11 +10,11 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 
 
+
 load_dotenv()
 
 TOKEN: Final = os.getenv("BOT_TOKEN")
 BOT_USERNAME: Final = '@remindersUsingABot'
-
 
 
 # Commands
