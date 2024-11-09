@@ -1,9 +1,9 @@
 import os
-from pymongo import MongoClient
+
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from dotenv import load_dotenv
-
+from pymongo import MongoClient
 # Load environment variables from .env file
 load_dotenv()
 

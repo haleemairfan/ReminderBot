@@ -1,12 +1,15 @@
-import requests
-from typing import Final
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 import os
+import threading
+from typing import Final
+
+from dotenv import load_dotenv  
+import requests
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton  
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
+
+from dummy_server import run_dummy_server
+
 
 
 
@@ -16,7 +19,7 @@ TOKEN: Final = os.getenv("BOT_TOKEN")
 BOT_USERNAME: Final = '@remindersUsingABot'
 
 
-
+threading.Thread(target=run_dummy_server).start()
 
 # Commands
 async def startCommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -75,7 +78,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         selected_date_str = query.data.replace('set_reminder_', '')
         selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
         context.user_data['selected_date'] = selected_date
-        await set_reminder(update, context, selected_date)
+        await setReminder(update, context, selected_date)
     elif query.data  == 'store_reminder':
         context.user_data['awaiting_reminder'] = True
         await query.message.reply_text('Please enter your reminder')
@@ -84,10 +87,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data.startswith('view_reminder_'):
         selected_date_str = query.data.replace('view_reminder_', '')
         selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
-        await view_reminder(update, context, selected_date)
+        await viewReminder(update, context, selected_date)
             
 
-async def set_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, selected_date: datetime.date):
+async def setReminder(update: Update, context: ContextTypes.DEFAULT_TYPE, selected_date: datetime.date):
     formatted_date = selected_date.strftime("%A, %d %B %Y")
     keyboard = [
         [InlineKeyboardButton("Enter your reminder!", callback_data='store_reminder')],
@@ -104,7 +107,7 @@ async def set_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, selec
             f'Please enter your reminders for {formatted_date}:', reply_markup=response
         )
 
-async def store_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def storeReminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get('awaiting_reminder'):
         text = update.message.text
         context.user_data['content'] = text
@@ -112,7 +115,7 @@ async def store_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['awaiting_time'] = True
         await update.message.reply_text('Please enter the time for your reminder (HH:MM)')
     
-async def store_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def storeTime(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         if context.user_data.get('awaiting_time'):
             text = update.message.text
@@ -137,11 +140,11 @@ async def store_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data.pop('awaiting_time', None)
             context.user_data.pop('awaiting_reminder', None)
 
-            await set_reminder(update, context, selected_date)
+            await setReminder(update, context, selected_date)
     except ValueError:
         await update.message.reply_text("Invalid time format. Please enter the time in HH:MM format.")
 
-async def view_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE, selected_date: datetime):
+async def viewReminder(update: Update, context: ContextTypes.DEFAULT_TYPE, selected_date: datetime):
     try:
         response = requests.get(f"https://reminder-bot-api.onrender.com/viewReminders?date={selected_date.strftime('%Y-%m-%d')}")
         
@@ -199,9 +202,9 @@ async def handleMessage(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             return
     elif context.user_data.get('awaiting_reminder'):
-        await store_reminder(update, context)
+        await storeReminder(update, context)
     elif context.user_data.get('awaiting_time'):
-        await store_time(update, context)
+        await storeTime(update, context)
     else:
         response: str = await handleResponse(text)
 
