@@ -47,6 +47,8 @@ async def viewCommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
         day_str = day.strftime('%A, %d %B')
         buttons.append([InlineKeyboardButton(day_str, callback_data=f'view_reminder_{day}')])
     
+    buttons.append([InlineKeyboardButton("Exit", callback_data='exit')])
+
     response = InlineKeyboardMarkup(buttons)
     await update.message.reply_text(
         "Let’s view your reminders", reply_markup=response
