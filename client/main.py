@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta
 import os
 import threading
@@ -243,6 +244,10 @@ def webhook():
     telegram_app.process_update(update)
     return "OK"
 
+
+async def set_webhook():
+    await telegram_app.bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
+
 # String all the functions together
 if __name__ == '__main__':
     print('starting bot')
@@ -261,7 +266,7 @@ if __name__ == '__main__':
 
     # Errors
     telegram_app.add_error_handler(error)
-    telegram_app.bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
+    asyncio.run(set_webhook())
     print("Webhook set. Flask app starting...")
 
-    app.run(port=5000)
+    app.run(port=5001)
