@@ -246,7 +246,6 @@ def webhook():
 # String all the functions together
 if __name__ == '__main__':
     print('starting bot')
-    app = Application.builder().token(TOKEN).build()
 
     # Commands
     telegram_app.add_handler(CommandHandler('start', startCommand))
