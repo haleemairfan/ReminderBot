@@ -1,22 +1,21 @@
-import asyncio
 from datetime import datetime, timedelta
 import os
 import threading
 from typing import Final
 
-from dotenv import load_dotenv
-from flask import Flask, request
+from dotenv import load_dotenv  
+import requests
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton  
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
+
+
 
 
 load_dotenv()
 
 TOKEN: Final = os.getenv("BOT_TOKEN")
 BOT_USERNAME: Final = '@remindersUsingABot'
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Set this to the public HTTPS URL for your Flask app
-app = Flask(__name__)
-telegram_app = Application.builder().token(TOKEN).build()
+
 
 
 # Commands
@@ -237,36 +236,26 @@ async def handleReminderCreation(update: Update, context: ContextTypes.DEFAULT_T
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f'Update {update} caused error {context.error}')
 
-@app.route(f"/{TOKEN}", methods=["POST"])
-def webhook():
-    # Parse the incoming Telegram update
-    update = Update.de_json(request.get_json(), telegram_app.bot)
-    telegram_app.process_update(update)
-    return "OK"
-
-
-async def set_webhook():
-    await telegram_app.bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
 
 # String all the functions together
 if __name__ == '__main__':
     print('starting bot')
+    app = Application.builder().token(TOKEN).build()
 
     # Commands
-    telegram_app.add_handler(CommandHandler('start', startCommand))
-    telegram_app.add_handler(CommandHandler('set', setCommand))
-    telegram_app.add_handler(CommandHandler('view', viewCommand))
-    telegram_app.add_handler(CommandHandler('help', helpCommand))
+    app.add_handler(CommandHandler('start', startCommand))
+    app.add_handler(CommandHandler('set', setCommand))
+    app.add_handler(CommandHandler('view', viewCommand))
+    app.add_handler(CommandHandler('help', helpCommand))
 
     # Messages
-    telegram_app.add_handler(MessageHandler(filters.TEXT, handleMessage))
+    app.add_handler(MessageHandler(filters.TEXT, handleMessage))
 
     # CallbackQuery handler for buttons
-    telegram_app.add_handler(CallbackQueryHandler(button))
+    app.add_handler(CallbackQueryHandler(button))
 
     # Errors
-    telegram_app.add_error_handler(error)
-    asyncio.run(set_webhook())
-    print("Webhook set. Flask app starting...")
+    app.add_error_handler(error)
 
-    app.run(port=5001)
+    print('polling')
+    app.run_polling(poll_interval=3)
