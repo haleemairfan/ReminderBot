@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import os
+from threading import Thread
 from typing import Final
 
 from dotenv import load_dotenv  
@@ -10,12 +12,10 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 
 
-
 load_dotenv()
 
 TOKEN: Final = os.getenv("BOT_TOKEN")
 BOT_USERNAME: Final = '@remindersUsingABot'
-
 
 # Commands
 async def startCommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -236,6 +236,19 @@ async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f'Update {update} caused error {context.error}')
 
 
+
+class simpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running.")
+
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 5001))
+    server = HTTPServer(("0.0.0.0", port), simpleHTTPRequestHandler)
+    server.serve_forever()
+
+
 # String all the functions together
 if __name__ == '__main__':
     print('starting bot')
@@ -255,6 +268,9 @@ if __name__ == '__main__':
 
     # Errors
     app.add_error_handler(error)
+
+
+    Thread(target=run_dummy_server).start()
 
     print('polling')
     app.run_polling(poll_interval=3)
