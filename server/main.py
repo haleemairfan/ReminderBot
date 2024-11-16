@@ -84,6 +84,12 @@ def view_reminder():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/", methods=["GET", "HEAD"])
+def health_check():
+    if request.method == "HEAD":
+        return "", 200
+    elif request.method == "GET":
+        return jsonify({"message": "Reminder Bot API is running!"}), 200
 
 # Running the Flask app
 if __name__ == "__main__":
