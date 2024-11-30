@@ -120,6 +120,7 @@ async def storeTime(update: Update, context: ContextTypes.DEFAULT_TYPE):
             selected_date = context.user_data.get('selected_date')
 
             reminder_data = {
+                "user_id": update.message.from_user.id,
                 "content": context.user_data.get('content'),
                 "date": selected_date.strftime("%Y-%m-%d"),
                 "time": selected_time.strftime("%H:%M")
@@ -142,8 +143,11 @@ async def storeTime(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def viewReminder(update: Update, context: ContextTypes.DEFAULT_TYPE, selected_date: datetime):
     try:
-        response = requests.get(f"https://reminder-bot-api.onrender.com/viewReminders?date={selected_date.strftime('%Y-%m-%d')}")
-        
+        user_id = update.callback_query.from_user.id  # Get the user ID
+        response = requests.get(
+            f"https://reminder-bot-api.onrender.com/viewReminders?date={selected_date.strftime('%Y-%m-%d')}&user_id={user_id}"
+        )
+
         if response.status_code == 200:
             # Parse the response data
             data = response.json()

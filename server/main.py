@@ -26,8 +26,13 @@ if "reminders" not in db.list_collection_names():
         validator={
             "$jsonSchema": {
                 "bsonType": "object",
-                "required": ["content", "date", "time"],
+                "required": ["user_id", "content", "date", "time"],
                 "properties": {
+                    "user_id": {
+                        "bsonType": "string",
+                        "description": "User ID must be a string."
+                    },
+
                     "content": {
                         "bsonType": "string",
                         "description": "Reminder content must be a string."
@@ -51,14 +56,15 @@ else:
 def store_reminder():
     try:
         data = request.json
+        user_id = data.get("user_id")
         content = data.get("content")
         date = data.get("date")
         time = data.get("time")
 
-        if not content or not date or not time:
-            return jsonify({"error": "All fields (content, date, and time) are required"}), 400
+        if not user_id or not content or not date or not time:
+            return jsonify({"error": "All fields (user_id, content, date, and time) are required"}), 400
 
-        reminder = {"content": content, "date": date, "time": time}
+        reminder = {"user_id": user_id, "content": content, "date": date, "time": time}
         result = remindersCollection.insert_one(reminder)
 
         return jsonify({"message": "Reminder stored successfully!", "id": str(result.inserted_id)}), 201
@@ -71,11 +77,17 @@ def store_reminder():
 def view_reminder():
     try:
         data = request.args
+        user_id = data.get("user_id")
         date = data.get("date")
-        if not date:
-            return jsonify({"error": "A valid date is required"}), 400
 
-        reminders = list(remindersCollection.find({"date": date}))
+        if not user_id:
+            return jsonify({"error": "A valid user_id is required"}), 400
+
+        query = {"user_id": user_id}
+        if date:
+            query["date"] = date
+
+        reminders = list(remindersCollection.find(query))
         
         for reminder in reminders:
             reminder["_id"] = str(reminder["_id"])
