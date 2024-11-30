@@ -1,4 +1,5 @@
 import os
+import logging
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
@@ -29,10 +30,9 @@ if "reminders" not in db.list_collection_names():
                 "required": ["user_id", "content", "date", "time"],
                 "properties": {
                     "user_id": {
-                        "bsonType": "string",
-                        "description": "User ID must be a string."
+                        "bsonType": "int",  # Change to "int" for integers
+                        "description": "User ID must be an integer."
                     },
-
                     "content": {
                         "bsonType": "string",
                         "description": "Reminder content must be a string."
@@ -51,12 +51,13 @@ if "reminders" not in db.list_collection_names():
     )
 else:
     remindersCollection = db["reminders"]
+
 # Route to store reminders
 @app.route("/storeReminders", methods=["POST"])
 def store_reminder():
     try:
         data = request.json
-        user_id = data.get("user_id")
+        user_id = int(data.get("user_id"))
         content = data.get("content")
         date = data.get("date")
         time = data.get("time")
@@ -72,25 +73,32 @@ def store_reminder():
         return jsonify({"error": str(e)}), 500
     
 
-# Route to view reminders
+logging.basicConfig(level=logging.INFO)
+
 @app.route("/viewReminders", methods=["GET"])
 def view_reminders():
-    user_id = request.args.get("user_id")
-    date = request.args.get("date")
+    try:
+        user_id = int(request.args.get("user_id"))  # Convert user_id to integer
+        date = request.args.get("date")
 
-    # Validate required parameters
-    if not user_id or not date:
-        return jsonify({"error": "Both user_id and date are required"}), 400
+        # Validate required parameters
+        if not user_id or not date:
+            return jsonify({"error": "Both user_id and date are required"}), 400
 
-    # Query reminders based on user_id and date
-    reminders = list(remindersCollection.find({"user_id": user_id, "date": date}))
+        # Query reminders based on user_id and date
+        reminders = list(remindersCollection.find({"user_id": user_id, "date": date}))
 
-    # Convert ObjectId to string
-    for reminder in reminders:
-        reminder["_id"] = str(reminder["_id"])
+        # Convert ObjectId to string
+        for reminder in reminders:
+            reminder["_id"] = str(reminder["_id"])
 
-    return jsonify({"data": reminders}), 200
+        # Log fetched reminders
+        logging.info(f"Fetched reminders for user_id {user_id} and date {date}: {reminders}")
 
+        return jsonify({"data": reminders}), 200
+    except Exception as e:
+        logging.error(f"Error occurred while fetching reminders: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/", methods=["GET", "HEAD"])
 def health_check():
