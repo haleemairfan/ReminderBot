@@ -153,11 +153,8 @@ async def viewReminder(update: Update, context: ContextTypes.DEFAULT_TYPE, selec
             data = response.json()
             reminders = data.get("data", [])
             
-            if reminders:
-                reminder_string = [f"- {reminder['time']}: {reminder['content']}" for reminder in reminders]
-                message = f"Reminders for {selected_date.strftime('%A, %d %B %Y')}:\n" + "\n".join(reminder_string)
-            else:
-                message = f"No reminders found for {selected_date.strftime('%A, %d %B %Y')}."
+            reminder_string = [f"- {reminder['time']}: {reminder['content']}" for reminder in reminders]
+            message = f"Reminders for {selected_date.strftime('%A, %d %B %Y')}:\n" + "\n".join(reminder_string)
             
             await update.callback_query.message.reply_text(message)
         else:

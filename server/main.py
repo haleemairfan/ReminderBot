@@ -74,27 +74,23 @@ def store_reminder():
 
 # Route to view reminders
 @app.route("/viewReminders", methods=["GET"])
-def view_reminder():
-    try:
-        data = request.args
-        user_id = data.get("user_id")
-        date = data.get("date")
+def view_reminders():
+    user_id = request.args.get("user_id")
+    date = request.args.get("date")
 
-        if not user_id:
-            return jsonify({"error": "A valid user_id is required"}), 400
+    # Validate required parameters
+    if not user_id or not date:
+        return jsonify({"error": "Both user_id and date are required"}), 400
 
-        query = {"user_id": user_id}
-        if date:
-            query["date"] = date
+    # Query reminders based on user_id and date
+    reminders = list(remindersCollection.find({"user_id": user_id, "date": date}))
 
-        reminders = list(remindersCollection.find(query))
-        
-        for reminder in reminders:
-            reminder["_id"] = str(reminder["_id"])
+    # Convert ObjectId to string
+    for reminder in reminders:
+        reminder["_id"] = str(reminder["_id"])
 
-        return jsonify({"message": "Here are your reminders!", "data": reminders}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return jsonify({"data": reminders}), 200
+
 
 @app.route("/", methods=["GET", "HEAD"])
 def health_check():
