@@ -5,7 +5,6 @@ A Telegram bot that helps users stay on top of their daily tasks by storing and 
 
 - Add reminders via Telegram messages  
 - Store and retrieve reminders using MongoDB  
-- Automatically deletes expired reminders to keep the database clean  
 - CI/CD pipeline integrated with Render for seamless deployment
 
 ## Tech Stack
