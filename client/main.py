@@ -9,9 +9,6 @@ import requests
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton  
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 
-
-
-
 load_dotenv()
 
 TOKEN: Final = os.getenv("BOT_TOKEN")
@@ -19,6 +16,12 @@ BOT_USERNAME: Final = '@remindersUsingABot'
 
 # Commands
 async def startCommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Sends a welcome message with a button to start creating reminders.
+    
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+    """
     # Creating buttons
     keyboard = [
         [InlineKeyboardButton("Create my reminders!", callback_data='create_reminders')]
@@ -31,13 +34,25 @@ async def startCommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def helpCommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Sends a help message to the user.
+
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+    """
     await update.message.reply_text('Type your tasks into this bot')
 
 
 async def viewCommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Sends a message with a list of days for the rest of the week, allowing the
+    user to view reminders for a specific day.
+
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+    """
     current_date = datetime.now().date()
     days_until_end_of_week = 6 - current_date.weekday()
-
 
     buttons = []
 
@@ -54,6 +69,12 @@ async def viewCommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def setCommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Sends a message to start the reminder creation process with a button.
+
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+    """
     keyboard = [
         [InlineKeyboardButton("Create my reminders!", callback_data='create_reminders')]
     ]
@@ -65,6 +86,12 @@ async def setCommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Callback query handler for button clicks
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handles all inline button clicks and routes the user to the appropriate action.
+
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+    """
     query = update.callback_query
     await query.answer()
 
@@ -87,6 +114,13 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
 
 async def setReminder(update: Update, context: ContextTypes.DEFAULT_TYPE, selected_date: datetime.date):
+    """Prompts the user to enter reminders for a specific date.
+
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+        selected_date (datetime.date): The date for which to set reminders.
+    """
     formatted_date = selected_date.strftime("%A, %d %B %Y")
     keyboard = [
         [InlineKeyboardButton("Enter your reminder!", callback_data='store_reminder')],
@@ -104,6 +138,12 @@ async def setReminder(update: Update, context: ContextTypes.DEFAULT_TYPE, select
         )
 
 async def storeReminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Stores the reminder content from the user and prompts for the time.
+
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+    """
     if context.user_data.get('awaiting_reminder'):
         text = update.message.text
         context.user_data['content'] = text
@@ -112,6 +152,13 @@ async def storeReminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text('Please enter the time for your reminder (HH:MM)')
     
 async def storeTime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Processes the reminder time, stores the reminder in the database via an API call,
+    and then prompts the user for the next reminder.
+
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+    """
     try:
         if context.user_data.get('awaiting_time'):
             text = update.message.text
@@ -142,6 +189,13 @@ async def storeTime(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Invalid time format. Please enter the time in HH:MM format.")
 
 async def viewReminder(update: Update, context: ContextTypes.DEFAULT_TYPE, selected_date: datetime):
+    """Fetches reminders for a specific date from the external API and displays them.
+
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+        selected_date (datetime): The date for which to view reminders.
+    """
     try:
         user_id = update.callback_query.from_user.id  # Get the user ID
         response = requests.get(
@@ -166,14 +220,36 @@ async def viewReminder(update: Update, context: ContextTypes.DEFAULT_TYPE, selec
 
 
 async def exit(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Sends a goodbye message when the user exits a conversation flow.
+
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+    """
     await update.callback_query.message.reply_text("Okay! See ya next time!")
     
 
 # Responses
 async def handleResponse(text: str) -> str:
+    """Provides a general response for unhandled text messages.
+
+    Args:
+        text (str): The incoming message text.
+
+    Returns:
+        str: A predefined response string.
+    """
     return 'Please refer to /help if you require any help using this bot'
 
 async def handleMessage(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """The main message handler for the bot. It determines the chat type,
+    checks for ongoing conversations (like setting a reminder), and routes the
+    message to the appropriate function.
+
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+    """
     # Group chat or private chat
     messageType: str = update.message.chat.type
 
@@ -203,6 +279,13 @@ async def handleMessage(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Reminder creation for a week
 async def handleReminderCreation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Generates a list of days for the rest of the week with buttons for
+    the user to select a day to set a reminder.
+
+    Args:
+        update (Update): The incoming update.
+        context (ContextTypes.DEFAULT_TYPE): The context for the current update.
+    """
     current_date = datetime.now().date()
     days_until_end_of_week = 6 - current_date.weekday()
 
@@ -225,11 +308,19 @@ async def handleReminderCreation(update: Update, context: ContextTypes.DEFAULT_T
 
 # Logging errors
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Logs any errors that occur during the bot's operation.
+
+    Args:
+        update (Update): The incoming update where the error occurred.
+        context (ContextTypes.DEFAULT_TYPE): The context for the error.
+    """
     print(f'Update {update} caused error {context.error}')
 
 
-
 class simpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    """A simple HTTP request handler that serves a basic "Bot is running" message.
+    This is used to keep the web service (e.g., on Render) from sleeping.
+    """
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
@@ -240,6 +331,8 @@ class simpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 def run_dummy_server():
+    """Runs a simple HTTP server in a separate thread.
+    """
     port = int(os.environ.get("PORT", 5001))
     server = HTTPServer(("0.0.0.0", port), simpleHTTPRequestHandler)
     server.serve_forever()
@@ -247,6 +340,9 @@ def run_dummy_server():
 
 # String all the functions together
 if __name__ == '__main__':
+    """Main function to set up and run the Telegram bot. It initializes the application,
+    adds command and message handlers, and starts polling for updates.
+    """
     print('starting bot')
     app = Application.builder().token(TOKEN).build()
 

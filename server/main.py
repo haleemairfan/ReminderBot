@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -30,7 +31,7 @@ if "reminders" not in db.list_collection_names():
                 "required": ["user_id", "content", "date", "time"],
                 "properties": {
                     "user_id": {
-                        "bsonType": "int",  # Change to "int" for integers
+                        "bsonType": "int", 
                         "description": "User ID must be an integer."
                     },
                     "content": {
@@ -55,6 +56,15 @@ else:
 # Route to store reminders
 @app.route("/storeReminders", methods=["POST"])
 def store_reminder():
+    """Stores a new reminder in the MongoDB database.
+
+    This endpoint expects a JSON payload with user_id, content, date, and time.
+    It inserts the data into the 'reminders' collection.
+
+    Returns:
+        A JSON response with a success message and the reminder's ID (status 201),
+        or an error message if the data is invalid (status 400) or a server error occurs (status 500).
+    """
     try:
         data = request.json
         user_id = int(data.get("user_id"))
@@ -77,6 +87,15 @@ logging.basicConfig(level=logging.INFO)
 
 @app.route("/viewReminders", methods=["GET"])
 def view_reminders():
+    """Fetches reminders for a specific user and date.
+
+    This endpoint expects 'user_id' and 'date' as query parameters.
+    It queries the database and returns a list of all matching reminders.
+
+    Returns:
+        A JSON response containing the list of reminders (status 200), or an
+        error message if parameters are missing (status 400) or a server error occurs (status 500).
+    """
     try:
         user_id = int(request.args.get("user_id"))  # Convert user_id to integer
         date = request.args.get("date")
@@ -102,6 +121,10 @@ def view_reminders():
 
 @app.route("/", methods=["GET", "HEAD"])
 def health_check():
+    """Provides a simple health check for the API.
+
+    This endpoint returns a 200 status code to indicate the service is running.
+    """
     if request.method == "HEAD":
         return "", 200
     elif request.method == "GET":
@@ -109,8 +132,9 @@ def health_check():
 
 # Running the Flask app
 if __name__ == "__main__":
+    """Main entry point for the Flask application.
+
+    This block runs the Flask development server, listening on the specified port.
+    """
     port = int(os.environ.get("PORT", 10000))  
     app.run(host="0.0.0.0", port=port, debug=True)
-
-
-
